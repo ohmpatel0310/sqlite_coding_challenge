@@ -2,7 +2,8 @@
 -- Tooling & validation:
 --  - Queries authored for SQLite (ANSI-compatible). To validate, run
 --    them with the `sqlite3` CLI or VS Code SQLTools against the provided
---    database (e.g. `sqlite3 mydb.sqlite < challenge.sql`) and inspect results.
+--    database (bais_sqlite_lab.db). Example:
+--      sqlite3 bais_sqlite_lab.db -header -column < challenge.sql
 --  - I include all order statuses here; any exclusions or filters are
 --    documented in INSIGHTS.md when applicable.
 
@@ -47,6 +48,8 @@ ORDER BY revenue DESC;
 -- TASK 3 — Employees Earning Above Their Department Average
 -- Goal: List employees with salary > department average.
 -- Output: first_name, last_name, department_name, employee_salary, department_average
+-- Approach: pre-calculate department averages via a subquery (davg)
+-- and join to each employee row, then filter where employee salary > dept avg.
 
 SELECT
   e.first_name,
@@ -63,3 +66,27 @@ JOIN (
 ) davg ON e.department_id = davg.department_id
 WHERE e.salary > davg.avg_salary
 ORDER BY d.name, e.salary DESC;
+
+-- TASK 4 — Cities with the Most Loyal Customers
+-- Goal: Rank cities by the count of Gold loyalty customers. Also provide
+-- a loyalty-level distribution by city.
+
+-- Primary: cities ranked by number of Gold customers
+SELECT
+  city,
+  COUNT(*) AS gold_customer_count
+FROM customers
+WHERE loyalty_level = 'Gold'
+GROUP BY city
+ORDER BY gold_customer_count DESC, city;
+
+-- Extension: loyalty distribution (Gold/Silver/Bronze) by city
+SELECT
+  city,
+  COUNT(*) AS total_customers,
+  SUM(CASE WHEN loyalty_level = 'Gold' THEN 1 ELSE 0 END) AS gold_count,
+  SUM(CASE WHEN loyalty_level = 'Silver' THEN 1 ELSE 0 END) AS silver_count,
+  SUM(CASE WHEN loyalty_level = 'Bronze' THEN 1 ELSE 0 END) AS bronze_count
+FROM customers
+GROUP BY city
+ORDER BY gold_count DESC, city;
